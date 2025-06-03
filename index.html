@@ -32,7 +32,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            /* Increased top and side padding for a more centralized, constrained look */
+            padding: 80px 50px 50px 50px; /* Top, Right, Bottom, Left */
             color: var(--color-text-primary);
             overflow-x: hidden; /* Prevent horizontal scrolling */
         }
@@ -521,6 +522,7 @@
         }
 
         // Initial client data if local storage is empty
+        // Ensure timestamps are Date objects here for consistency
         const initialClientsData = [
             { id: 'client-' + Date.now() + '-0', name: "Abel Mutua", status: "Pending", notes: '', timestamp: new Date() },
             { id: 'client-' + Date.now() + '-1', name: "Bima By Hilda", status: "Pending", notes: '', timestamp: new Date() },
@@ -547,10 +549,11 @@
                     // Ensure timestamps are Date objects for sorting
                     allClients = parsedClients.map(client => ({
                         ...client,
-                        timestamp: new Date(client.timestamp)
+                        timestamp: new Date(client.timestamp) // Convert ISO string back to Date object
                     }));
                 } else {
-                    // If local storage is empty, use initial data, ensuring timestamps are Date objects
+                    // If local storage is empty, use initial data.
+                    // initialClientsData already has Date objects for timestamps.
                     allClients = initialClientsData.map(client => ({
                         ...client,
                         timestamp: new Date(client.timestamp) // Ensure initial data also has Date objects
@@ -574,7 +577,8 @@
                 // Convert Date objects to ISO strings for storage
                 const clientsToSave = allClients.map(client => ({
                     ...client,
-                    timestamp: client.timestamp.toISOString()
+                    // Ensure timestamp is a Date object before calling toISOString()
+                    timestamp: client.timestamp instanceof Date ? client.timestamp.toISOString() : client.timestamp
                 }));
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clientsToSave));
             } catch (e) {
@@ -586,7 +590,8 @@
         // --- Application Initialization (replaces onAuthStateChanged) ---
         document.addEventListener('DOMContentLoaded', () => {
             loadClientsFromLocalStorage();
-            allClients.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by timestamp
+            // Sort by timestamp. `getTime()` is safe on Date objects.
+            allClients.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
             findClientWithLeastIdeas(allClients);
             renderClientSelector(allClients);
             filterAndRenderClients();
@@ -835,7 +840,7 @@
                  payload.contents = [{ role: "user", parts: [{ text: prompt }] }];
             }
 
-            const apiKey = ""; // Canvas will automatically provide the API key at runtime
+            const apiKey = "AIzaSyAMtg2kMwCSr946XYPn6khnuJUYhevKkXI"; // Canvas will automatically provide the API key at runtime
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
             try {
