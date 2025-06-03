@@ -437,34 +437,39 @@
 
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // No Firebase imports needed for local storage
+        // import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the Canvas environment
+        // Global variables provided by the Canvas environment (not used for local storage directly but kept for context)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        // No Firebase initialization needed
+        // const app = initializeApp(firebaseConfig);
+        // const db = getFirestore(app);
+        // const auth = getAuth(app);
 
-        let currentUserId = null; // Store the authenticated user ID
+        // currentUserId is not relevant for local storage, but keeping it as a placeholder if needed for other logic
+        let currentUserId = 'local_user'; // A fixed ID for local storage context
+
         let allClients = []; // Store all clients with their IDs and data
         let currentSearchTerm = ''; // Store the current search term
         let clientWithLeastIdeas = null; // Store the client with the least ideas
 
         // Gemini Chat History for Creative Content Creator
-        // Initial message is now handled by displayChatMessage on load, not in this array
-        let creativeChatHistory = [];
+        let creativeChatHistory = []; // Initial message added on DOMContentLoaded
+
+        // Local Storage Key
+        const LOCAL_STORAGE_KEY = 'clientIdeasData';
 
         // DOM elements
         const clientSelect = document.getElementById('client-select');
         const mainNotesTextarea = document.getElementById('main-notes-textarea');
         const saveIdeaButton = document.getElementById('save-idea-button');
-        const geminiAssistantButton = document.getElementById('gemini-assistant-button'); // New Gemini Assistant button
+        const geminiAssistantButton = document.getElementById('gemini-assistant-button');
         const newClientNameInput = document.getElementById('new-client-name');
         const addClientButton = document.getElementById('add-client-button');
         const clientCardsContainer = document.getElementById('client-cards-container');
@@ -474,9 +479,9 @@
         const leastIdeasClientSlot = document.getElementById('least-ideas-client-slot');
         const leastIdeasClientName = document.getElementById('least-ideas-client-name');
 
-        const creativeChatHistoryDiv = document.getElementById('creative-chat-history'); // Creative Chat History
-        const creativeChatInput = document.getElementById('creative-chat-input'); // Creative Chat Input
-        const creativeChatSendButton = document.getElementById('creative-chat-send-button'); // Creative Chat Send Button
+        const creativeChatHistoryDiv = document.getElementById('creative-chat-history');
+        const creativeChatInput = document.getElementById('creative-chat-input');
+        const creativeChatSendButton = document.getElementById('creative-chat-send-button');
 
         const modalOverlay = document.getElementById('modal-overlay');
         const modalMessage = document.getElementById('modal-message');
@@ -515,82 +520,85 @@
             }, 3000); // Message disappears after 3 seconds
         }
 
-        // Initial client data if the collection is empty
+        // Initial client data if local storage is empty
         const initialClientsData = [
-            { name: "Abel Mutua", status: "Pending" },
-            { name: "Bima By Hilda", status: "Pending" },
-            { name: "DairyVerse", status: "Pending" },
-            { name: "Funcity Gardens", status: "Pending" },
-            { name: "Jeff Kuria", status: "Pending" },
-            { name: "Phoneplace Kenya", status: "Pending" },
-            { name: "Steve Rogers", status: "Pending" },
-            { name: "Tenacity", status: "Pending" },
-            { name: "Viehpro", status: "Pending" },
-            { name: "Wandas Finery", status: "Pending" },
-            { name: "Zunguka Africa", status: "Pending" },
-            { name: "Judy Nyawira", status: "Pending" },
-            { name: "Celestine Ndinda", status: "Pending" },
-            { name: "Cleanshelf Marketing", status: "Pending" },
+            { id: 'client-' + Date.now() + '-0', name: "Abel Mutua", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-1', name: "Bima By Hilda", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-2', name: "DairyVerse", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-3', name: "Funcity Gardens", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-4', name: "Jeff Kuria", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-5', name: "Phoneplace Kenya", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-6', name: "Steve Rogers", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-7', name: "Tenacity", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-8', name: "Viehpro", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-9', name: "Wandas Finery", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-10', name: "Zunguka Africa", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-11', name: "Judy Nyawira", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-12', name: "Celestine Ndinda", status: "Pending", notes: '', timestamp: new Date() },
+            { id: 'client-' + Date.now() + '-13', name: "Cleanshelf Marketing", status: "Pending", notes: '', timestamp: new Date() },
         ];
 
-        // Authenticate user and set up Firestore listener
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUserId = user.uid;
-                console.log("Authenticated with user ID:", currentUserId);
-
-                // Check if the collection is empty and populate with initial data
-                const clientsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/clients`);
-                const existingClientsSnapshot = await getDocs(clientsCollectionRef);
-
-                if (existingClientsSnapshot.empty) {
-                    console.log("Client collection is empty. Populating with initial data...");
-                    for (const client of initialClientsData) {
-                        await addDoc(clientsCollectionRef, {
-                            name: client.name,
-                            status: client.status,
-                            notes: '', // Default empty notes
-                            timestamp: new Date() // Add a timestamp for ordering
-                        });
-                    }
+        // --- Local Storage Functions ---
+        function loadClientsFromLocalStorage() {
+            try {
+                const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (data) {
+                    const parsedClients = JSON.parse(data);
+                    // Ensure timestamps are Date objects for sorting
+                    allClients = parsedClients.map(client => ({
+                        ...client,
+                        timestamp: new Date(client.timestamp)
+                    }));
+                } else {
+                    // If local storage is empty, use initial data, ensuring timestamps are Date objects
+                    allClients = initialClientsData.map(client => ({
+                        ...client,
+                        timestamp: new Date(client.timestamp) // Ensure initial data also has Date objects
+                    }));
+                    saveClientsToLocalStorage(); // Save this correctly formatted initial data
                 }
+            } catch (e) {
+                console.error("Error loading from local storage:", e);
+                showMessage('error', 'Failed to load data from local storage. Falling back to initial data.');
+                // Fallback: Ensure initial data is correctly formatted even on error
+                allClients = initialClientsData.map(client => ({
+                    ...client,
+                    timestamp: new Date(client.timestamp)
+                }));
+                saveClientsToLocalStorage(); // Try to save the fallback data
+            }
+        }
 
-                // Set up real-time listener for clients
-                const q = query(clientsCollectionRef);
+        function saveClientsToLocalStorage() {
+            try {
+                // Convert Date objects to ISO strings for storage
+                const clientsToSave = allClients.map(client => ({
+                    ...client,
+                    timestamp: client.timestamp.toISOString()
+                }));
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clientsToSave));
+            } catch (e) {
+                console.error("Error saving to local storage:", e);
+                showMessage('error', 'Failed to save data to local storage.');
+            }
+        }
 
-                onSnapshot(q, (snapshot) => {
-                    allClients = []; // Clear previous clients
-                    snapshot.forEach((doc) => {
-                        allClients.push({ id: doc.id, ...doc.data() });
-                    });
+        // --- Application Initialization (replaces onAuthStateChanged) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadClientsFromLocalStorage();
+            allClients.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by timestamp
+            findClientWithLeastIdeas(allClients);
+            renderClientSelector(allClients);
+            filterAndRenderClients();
 
-                    // Sort clients by timestamp in descending order
-                    allClients.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-
-                    findClientWithLeastIdeas(allClients); // Find and update least ideas client
-                    renderClientSelector(allClients);
-                    filterAndRenderClients(); // Render based on current search term
-                }, (error) => {
-                    console.error("Error fetching clients:", error);
-                    showMessage('error', 'Failed to load clients. Please check your connection.');
-                });
-
-            } else {
-                // If no user is authenticated, sign in anonymously or with custom token
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    }
-                } catch (error) {
-                    console.error("Error signing in:", error);
-                    showMessage('error', 'Authentication failed. Please refresh the page.');
-                }
+            // Initial message for Creative Content Creator chat
+            if (creativeChatHistory.length === 0) {
+                const initialGeminiMessage = "Hello! I'm your digital creative content creator. I specialize in creative minimalism with an eye for detail, and I can even throw in some nostalgic and morale meme style. What are you working on today?";
+                displayChatMessage('gemini', initialGeminiMessage);
+                creativeChatHistory.push({ role: "model", parts: [{ text: initialGeminiMessage }] });
             }
         });
+
 
         // Function to find the client with the least ideas
         function findClientWithLeastIdeas(clients) {
@@ -604,7 +612,7 @@
             let leastIdeasClient = null;
 
             clients.forEach(client => {
-                const notesLength = (client.notes || '').length;
+                const notesLength = (client.notes || '').split(/\s+/).filter(word => word.length > 0).length;
                 if (notesLength < minNotesLength) {
                     minNotesLength = notesLength;
                     leastIdeasClient = client;
@@ -627,30 +635,29 @@
         // Event listener for clicking the least ideas client slot
         leastIdeasClientSlot.addEventListener('click', () => {
             if (clientWithLeastIdeas) {
-                clientSelect.value = clientWithLeastIdeas.id; // Select in dropdown
-                loadClientNotes(clientWithLeastIdeas.id); // Load notes
-                mainNotesTextarea.focus(); // Focus the notepad
+                clientSelect.value = clientWithLeastIdeas.id;
+                loadClientNotes(clientWithLeastIdeas.id);
+                mainNotesTextarea.focus();
             }
         });
 
 
         // Function to populate the client dropdown
         function renderClientSelector(clients) {
-            clientSelect.innerHTML = '<option value="">-- Select a Client --</option>'; // Clear and add default option
+            clientSelect.innerHTML = '<option value="">-- Select a Client --</option>';
             clients.forEach(client => {
                 const option = document.createElement('option');
                 option.value = client.id;
                 option.textContent = client.name;
                 clientSelect.appendChild(option);
             });
-            // If a client was previously selected, try to re-select it
             const currentSelectedClientId = clientSelect.dataset.selectedClientId;
             if (currentSelectedClientId && clients.some(c => c.id === currentSelectedClientId)) {
                 clientSelect.value = currentSelectedClientId;
                 loadClientNotes(currentSelectedClientId);
             } else {
-                 // Clear notes if no client is selected or previous client is gone
                 mainNotesTextarea.value = '';
+                clientSelect.dataset.selectedClientId = ''; // Clear stored ID
                 clientSelect.value = '';
             }
         }
@@ -660,7 +667,7 @@
             const selectedClient = allClients.find(client => client.id === clientId);
             if (selectedClient) {
                 mainNotesTextarea.value = selectedClient.notes || '';
-                clientSelect.dataset.selectedClientId = clientId; // Store selected ID
+                clientSelect.dataset.selectedClientId = clientId;
             } else {
                 mainNotesTextarea.value = '';
                 clientSelect.dataset.selectedClientId = '';
@@ -682,7 +689,7 @@
                 client.name.toLowerCase().includes(currentSearchTerm.toLowerCase())
             );
 
-            clientCardsContainer.innerHTML = ''; // Clear existing cards
+            clientCardsContainer.innerHTML = '';
 
             if (filteredClients.length === 0) {
                 noClientsMessage.classList.remove('hidden');
@@ -690,15 +697,13 @@
                 noClientsMessage.classList.add('hidden');
                 filteredClients.forEach((client, index) => {
                     const clientCard = document.createElement('div');
-                    clientCard.className = 'card client-card'; // Add base card class
-                    clientCard.dataset.clientId = client.id; // Store client ID
+                    clientCard.className = 'card client-card';
+                    clientCard.dataset.clientId = client.id;
 
-                    // Apply distinct gradient class based on index
                     const gradientClass = cardGradients[index % cardGradients.length];
                     clientCard.classList.add(gradientClass);
 
-                    // Determine health dot color based on notes length
-                    const notesLength = (client.notes || '').split(/\s+/).filter(word => word.length > 0).length; // Count words
+                    const notesLength = (client.notes || '').split(/\s+/).filter(word => word.length > 0).length;
                     const healthDotClass = notesLength < 3 ? 'red' : 'green';
 
                     clientCard.innerHTML = `
@@ -724,14 +729,12 @@
             }
 
 
-            // Add event listeners to newly created elements
             document.querySelectorAll('.client-card').forEach(card => {
                 card.addEventListener('click', (event) => {
-                    // Prevent card click from triggering if delete button was clicked
                     if (!event.target.closest('.delete-client-button')) {
                         const clientId = card.dataset.clientId;
-                        clientSelect.value = clientId; // Set dropdown value
-                        loadClientNotes(clientId); // Load notes
+                        clientSelect.value = clientId;
+                        loadClientNotes(clientId);
                     }
                 });
             });
@@ -747,32 +750,30 @@
         }
 
         // Add new client
-        addClientButton.addEventListener('click', async () => {
+        addClientButton.addEventListener('click', () => {
             const name = newClientNameInput.value.trim();
-            if (name && currentUserId) {
-                try {
-                    await addDoc(collection(db, `artifacts/${appId}/users/${currentUserId}/clients`), {
-                        name: name,
-                        status: 'Pending', // Default status for new clients, though not displayed
-                        notes: '',
-                        timestamp: new Date()
-                    });
-                    newClientNameInput.value = ''; // Clear input
-                    showMessage('success', `Client "${name}" added successfully!`);
-                } catch (e) {
-                    console.error("Error adding document: ", e);
-                    showMessage('error', `Failed to add client. Error: ${e.message}`);
-                }
-            } else if (!name) {
+            if (name) {
+                const newClient = {
+                    id: 'client-' + Date.now(), // Simple unique ID
+                    name: name,
+                    status: 'Pending', // Status is still stored but not displayed
+                    notes: '',
+                    timestamp: new Date() // Store as Date object
+                };
+                allClients.unshift(newClient); // Add to beginning for latest first
+                saveClientsToLocalStorage();
+                newClientNameInput.value = '';
+                showMessage('success', `Client "${name}" added successfully!`);
+                filterAndRenderClients();
+                renderClientSelector(allClients); // Re-render dropdown
+                findClientWithLeastIdeas(allClients); // Re-evaluate least ideas client
+            } else {
                 showMessage('error', 'Client name cannot be empty.');
-            } else if (!currentUserId) {
-                console.error("User not authenticated. Cannot add client.");
-                showMessage('error', 'You are not authenticated. Please refresh the page.');
             }
         });
 
         // Save idea for the selected client
-        saveIdeaButton.addEventListener('click', async () => {
+        saveIdeaButton.addEventListener('click', () => {
             const selectedClientId = clientSelect.value;
             const newNotes = mainNotesTextarea.value;
 
@@ -781,41 +782,35 @@
                 return;
             }
 
-            if (currentUserId) {
-                try {
-                    const clientDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/clients`, selectedClientId);
-                    await updateDoc(clientDocRef, {
-                        notes: newNotes
-                    });
-                    showMessage('success', "Idea saved successfully!");
-                } catch (e) {
-                    console.error("Error updating document: ", e);
-                    showMessage('error', `Failed to save idea. Error: ${e.message}`);
-                }
+            const clientIndex = allClients.findIndex(client => client.id === selectedClientId);
+            if (clientIndex !== -1) {
+                allClients[clientIndex].notes = newNotes;
+                saveClientsToLocalStorage();
+                showMessage('success', "Idea saved successfully!");
+                filterAndRenderClients(); // Re-render cards to update note previews and health dots
+                findClientWithLeastIdeas(allClients); // Re-evaluate least ideas client
             } else {
-                console.error("User not authenticated. Cannot save idea.");
-                showMessage('error', "You are not authenticated. Please refresh the page.");
+                showMessage('error', "Selected client not found.");
             }
         });
 
         // Delete client
-        async function deleteClient(clientId) {
-            if (currentUserId) {
-                try {
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUserId}/clients`, clientId));
-                    // If the deleted client was currently selected, clear the notepad
-                    if (clientSelect.value === clientId) {
-                        clientSelect.value = '';
-                        mainNotesTextarea.value = '';
-                    }
-                    showMessage('success', "Client deleted successfully!");
-                } catch (e) {
-                    console.error("Error deleting document: ", e);
-                    showMessage('error', `Failed to delete client. Error: ${e.message}`);
+        function deleteClient(clientId) {
+            const initialClientCount = allClients.length;
+            allClients = allClients.filter(client => client.id !== clientId);
+            if (allClients.length < initialClientCount) {
+                saveClientsToLocalStorage();
+                // If the deleted client was currently selected, clear the notepad
+                if (clientSelect.value === clientId) {
+                    clientSelect.value = '';
+                    mainNotesTextarea.value = '';
                 }
+                showMessage('success', "Client deleted successfully!");
+                filterAndRenderClients(); // Re-render cards
+                renderClientSelector(allClients); // Re-render dropdown
+                findClientWithLeastIdeas(allClients); // Re-evaluate least ideas client
             } else {
-                console.error("User not authenticated. Cannot delete client.");
-                showMessage('error', "You are not authenticated. Please refresh the page.");
+                showMessage('error', "Client not found for deletion.");
             }
         }
 
@@ -831,7 +826,7 @@
             filterAndRenderClients();
         });
 
-        // --- Gemini Integration ---
+        // --- Gemini Integration (remains largely unchanged) ---
 
         // Helper function to call Gemini API
         async function callGeminiAPI(prompt, chatHistory = []) {
@@ -919,18 +914,8 @@
             messageDiv.className = `chat-message ${sender}`;
             messageDiv.textContent = message;
             creativeChatHistoryDiv.appendChild(messageDiv);
-            creativeChatHistoryDiv.scrollTop = creativeChatHistoryDiv.scrollHeight; // Scroll to bottom
+            creativeChatHistoryDiv.scrollTop = creativeChatHistoryDiv.scrollHeight;
         }
-
-        // Initial message for Creative Content Creator chat
-        // This is now added dynamically on page load, not in the HTML
-        document.addEventListener('DOMContentLoaded', () => {
-            if (creativeChatHistory.length === 0) { // Only add if chat history is empty
-                const initialGeminiMessage = "Hello! I'm your digital creative content creator. I specialize in creative minimalism with an eye for detail, and I can even throw in some nostalgic and morale meme style. What are you working on today?";
-                displayChatMessage('gemini', initialGeminiMessage);
-                creativeChatHistory.push({ role: "model", parts: [{ text: initialGeminiMessage }] });
-            }
-        });
 
         creativeChatSendButton.addEventListener('click', async () => {
             const userMessage = creativeChatInput.value.trim();
@@ -938,7 +923,7 @@
 
             displayChatMessage('user', userMessage);
             creativeChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-            creativeChatInput.value = ''; // Clear input
+            creativeChatInput.value = '';
 
             creativeChatSendButton.disabled = true;
             creativeChatInput.disabled = true;
@@ -953,10 +938,9 @@
                 const personaPrompt = `You are the best digital creative content creator and creative, with an eye for details and creative minimalism. You also have a nostalgic and morale meme style. Respond to the user's query based on this persona. Keep your responses concise and engaging.`;
                 const fullPrompt = `${personaPrompt}\n\nUser: ${userMessage}`;
 
-                // The chatHistory for the API call should include the persona prompt for each turn
                 const chatHistoryForAPI = [
-                    { role: "user", parts: [{ text: personaPrompt }] }, // Set persona for each turn
-                    ...creativeChatHistory.slice(1) // Exclude initial model message from history
+                    { role: "user", parts: [{ text: personaPrompt }] },
+                    ...creativeChatHistory.slice(1)
                 ];
 
                 const response = await callGeminiAPI(fullPrompt, chatHistoryForAPI);
@@ -985,4 +969,3 @@
     </script>
 </body>
 </html>
- 
